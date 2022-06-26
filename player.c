@@ -23,8 +23,9 @@ HarvestAgent* create_agent(char id, int pos_x, int pos_y, char orientation){
 
 
 char consume(HarvestAgent* agent, char c){
-  if (c == 'A')
+  if (c == 'A'){
     agent -> reward++;
     return ' ';
+  }
   return c;
 }
