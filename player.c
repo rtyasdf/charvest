@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 typedef struct{
   char id;
   int pos_x;
@@ -9,14 +7,14 @@ typedef struct{
 } HarvestAgent;
 
 
-HarvestAgent* create_agent(char id, int pos_x, int pos_y, char orientation){
-  HarvestAgent* agent = (HarvestAgent* ) malloc(sizeof(HarvestAgent));
+HarvestAgent create_agent(char id, int pos_x, int pos_y, char orientation){
+  HarvestAgent agent;
 
-  agent -> id = id;
-  agent -> pos_x = pos_x;
-  agent -> pos_y = pos_y;
-  agent -> orientation = orientation;
-  agent -> reward = 0;
+  agent.id = id;
+  agent.pos_x = pos_x;
+  agent.pos_y = pos_y;
+  agent.orientation = orientation;
+  agent.reward = 0;
   
   return agent;
 }
