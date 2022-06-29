@@ -1,6 +1,8 @@
 #include<stdlib.h>
 #include<stdio.h>
+#include"player.c"
 #include"utils.c"
+#include"resolution.c"
 
 typedef struct {
   int num_of_agents;
@@ -100,8 +102,7 @@ void reset(HarvestEnv env, char* obs){
       p = env.spawn_pos[index];
     }
     
-    env.agents[i].pos_x = p.x;
-    env.agents[i].pos_y = p.y;
+    env.agents[i].pos = p;
     env.agents[i].orientation = random() & 3;
     env.world_map[p.y][p.x] = env.agents[i].id + 97;
   }
@@ -111,4 +112,66 @@ void reset(HarvestEnv env, char* obs){
     get_agent_observation(env.agents[i], env.world_map, 
                           NUM_OF_ROWS, MAP_ROW_LENGTH, 
                           (char* )(obs + 7 * 7 * i));
+}
+
+
+// step
+//    вход: массив целых чисел (действия принятые агентами)
+//    выход: наблюдения агентов (a.k.a. снимки карты), награды, dones (может вообще не возвращать?), info (тот же вопрос)
+//  1) расчёт следующих позиций агентов [здесь нужно учитывать повороты]
+//  2) ?? отлавливать шаги в стену ??
+//  3) conflict resolution
+//  4) ?? поменять позиции агентов ??
+//  5) обработать поедание яблок
+//  6) повернуть агентов которые выбрали TURN
+//  7) ?? выстрелы ??
+//  8) выращиваем новые яблоки
+//  9) получаем снимки
+// 10) собираем награды
+
+void step(HarvestEnv env, int* actions, char* obs, float* rewards){
+
+  // 1) and 2) 
+  Pair next_pos[env.num_of_agents];
+  for(int i=0; i < env.num_of_agents; i++){
+    next_pos[i] = get_next_pos(env.agents[i].pos, env.agents[i].orientation, actions[i]);
+
+    int y = next_pos[i].y;
+    int x = next_pos[i].x;
+    if (env.world_map[y][x] == '@')
+      next_pos[i] = env.agents[i].pos;
+  }
+
+  // 3)
+  int change[2 * env.num_of_agents];
+  for(int i=0; i < 2 * env.num_of_agents; i++)
+    change[i] = 0;
+  
+  update_moves(env.world_map, env.num_of_agents, (Pair* )next_pos, (int* )change); 
+
+
+  // 4) and 5)
+  for(char i=0; i < env.num_of_agents; i++){
+    //   если change == 1:  // по построению это автоматически означает, что агент собирался двигаться И будет двигаться
+    //     если на нынешней позиции стоит буква агента
+    //       поставить там пробел
+    //     заменить поля агента новой позицией
+    //     обработать следующую позицию (типа съесть яблоко если оно там есть)
+    //     поставить агента на карту в соответствии с позицией
+
+    if (change[i] == 1){
+      Pair p = env.agents[i].pos;
+      if (env.world_map[p.y][p.x] == 97 + i)
+        env.world_map[p.y][p.x] = ' ';
+      
+
+      Pair np = next_pos[i];
+      env.agents[i].pos = np;
+
+      // съесть яблоко в новой локации
+      consume(&env.agents[i], env.world_map[np.y][np.x]);
+
+      env.world_map[np.y][np.x] = 97 + i;
+    }
+  }
 }

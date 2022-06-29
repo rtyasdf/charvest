@@ -1,7 +1,12 @@
 typedef struct{
+  int x;
+  int y;
+} Pair;
+
+
+typedef struct{
   char id;
-  int pos_x;
-  int pos_y;
+  Pair pos;
   char orientation;
   int reward;
 } HarvestAgent;
@@ -11,8 +16,8 @@ HarvestAgent create_agent(char id, int pos_x, int pos_y, char orientation){
   HarvestAgent agent;
 
   agent.id = id;
-  agent.pos_x = pos_x;
-  agent.pos_y = pos_y;
+  agent.pos.x = pos_x;
+  agent.pos.y = pos_y;
   agent.orientation = orientation;
   agent.reward = 0;
   
@@ -20,10 +25,7 @@ HarvestAgent create_agent(char id, int pos_x, int pos_y, char orientation){
 }
 
 
-char consume(HarvestAgent* agent, char c){
-  if (c == 'A'){
+void consume(HarvestAgent* agent, char c){
+  if (c == 'A')
     agent -> reward++;
-    return ' ';
-  }
-  return c;
 }

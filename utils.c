@@ -1,12 +1,5 @@
-#include"player.c"
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
-
-typedef struct{
-  int x;
-  int y;
-} Pair;
 
 
 int count_pos(char* map[], const int num_of_rows, const int length, char c){
@@ -62,16 +55,16 @@ void fill_map(char** map, Pair* positions, int size, char symbol){
 void get_agent_observation(HarvestAgent agent, char** map, 
                            const int num_of_rows, const int length, 
                            char* obs){
-  int top = agent.pos_y - 3;
-  int bottom = agent.pos_y + 3;
+  int top = agent.pos.y - 3;
+  int bottom = agent.pos.y + 3;
 
   int local_top = MAX(-top, 0);
 
   int global_top = MAX(top, 0);
   int global_bottom = MIN(bottom, num_of_rows - 1);
 
-  int left = agent.pos_x - 3;
-  int right = agent.pos_x + 3;
+  int left = agent.pos.x - 3;
+  int right = agent.pos.x + 3;
 
   int local_left = MAX(-left, 0);
 
@@ -87,3 +80,43 @@ void get_agent_observation(HarvestAgent agent, char** map,
     local_top++;
   }
 }
+
+/*
+
+ACTIONS:
+  0 : MOVE_LEFT
+  1 : MOVE_DOWN
+  2 : MOVE_RIGHT
+  3 : MOVE_UP
+  (порядок против часовой стрелки)
+  
+  4 : STAY
+
+  5 : TURN_CLOCKWISE
+  6 : TURN_COUNTERCLOCKWISE
+  
+  7 : FIRE
+
+
+ORIENTATIONS (порядок против часовой стрелки):
+  0 : UP
+  1 : LEFT
+  2 : DOWN
+  3 : RIGHT
+
+*/
+Pair get_next_pos(Pair pos, int orientation, int action){
+  if (action > 3)
+    return pos;
+  
+  Pair next = pos;
+  action = (action + orientation) & 3;
+  if (action & 1)
+    next.y += (action - 2);
+  else
+    next.x += (action - 1);
+
+  return next;
+}
+
+
