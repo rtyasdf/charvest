@@ -85,11 +85,11 @@ void get_agent_observation(HarvestAgent agent, char** map,
 
 ACTIONS:
   0 : MOVE_LEFT
-  1 : MOVE_DOWN
+  1 : MOVE_UP
   2 : MOVE_RIGHT
-  3 : MOVE_UP
-  (порядок против часовой стрелки)
-  
+  3 : MOVE_DOWN
+  (порядок по часовой стрелке)
+
   4 : STAY
 
   5 : TURN_CLOCKWISE
@@ -98,11 +98,11 @@ ACTIONS:
   7 : FIRE
 
 
-ORIENTATIONS (порядок против часовой стрелки):
+ORIENTATIONS (порядок по часовой стрелке):
   0 : UP
-  1 : LEFT
+  1 : RIGHT
   2 : DOWN
-  3 : RIGHT
+  3 : LEFT
 
 */
 Pair get_next_pos(Pair pos, int orientation, int action){

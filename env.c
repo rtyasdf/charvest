@@ -129,7 +129,7 @@ void reset(HarvestEnv env, char* obs){
 //  9) получаем снимки
 // 10) собираем награды
 
-void step(HarvestEnv env, int* actions, char* obs, float* rewards){
+void step(HarvestEnv env, int* actions, char* obs, int* rewards){
 
   // 1) and 2) 
   Pair next_pos[env.num_of_agents];
