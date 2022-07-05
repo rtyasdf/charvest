@@ -9,10 +9,13 @@ typedef struct {
   int** neighbors;
   int* alive;
   
-  // Stack
+  // Stack of indicies of dead apples
   int* dead;
   int* new_head;
   int* old_head;
+  
+  // Stack of indicies for hiding under fire
+  int* hide;
 } AppleMap;
 
 
@@ -78,7 +81,7 @@ void fill_neighbors(char* map[], int** neighbors, int** id,
           if (x < 0 || x >= length || (v == 0 && u == 0))
             continue; 
 
-          if (u * u + v * v <= R * R && map[y][x] == 'A')
+          if (u * u + v * v <= R * R && map[y][x] == c)
             neighbors[count][++size] = id[y][x];
         }
       }
@@ -178,6 +181,8 @@ AppleMap* create_apple_map(char* build_map[], const int num_of_rows, const int l
   map -> dead = (int* ) malloc(sizeof(int) * (map -> size + 1));
   map -> old_head = map -> dead;
   map -> new_head = map -> dead;
+
+  map -> hide = (int* ) malloc(sizeof(int) * (map -> size + 1));
 
   return map;
 }

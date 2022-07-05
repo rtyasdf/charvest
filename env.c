@@ -4,6 +4,7 @@
 #include"utils.c"
 #include"apple_map.c"
 #include"resolution.c"
+#include"fire_utils.c"
 
 typedef struct {
   int num_of_agents;
@@ -21,6 +22,7 @@ typedef struct {
   int wall_pos_size;
 
   HarvestAgent* agents;
+  char* dead_agents;
 } HarvestEnv;
 
 const int NUM_OF_ROWS = 16;
@@ -77,6 +79,7 @@ HarvestEnv create_env(int num_of_agents){
   for(char i=0; i < num_of_agents; i++)
     env.agents[i] = create_agent(i, 0, 0, 0);
 
+  env.dead_agents = (char* ) malloc(sizeof(char) * (num_of_agents + 1));
   return env;
 }
 
@@ -155,11 +158,10 @@ void step(HarvestEnv env, int* actions, char* obs, int* rewards){
   
   update_moves(env.world_map, env.num_of_agents, (Pair* )next_pos, (int* )change); 
 
-
   // 4), 5) and 6)
   for(char i=0; i < env.num_of_agents; i++){
     //   если change == 1:  // по построению это автоматически означает, что агент собирался двигаться И будет двигаться
-    //     если на нынешней позиции стоит буква агента
+    //     если на нынешней позиции стоит буква этого агента
     //       поставить там пробел
     //     заменить поля агента новой позицией
     //     обработать следующую позицию (типа съесть яблоко если оно там есть)
@@ -196,16 +198,43 @@ void step(HarvestEnv env, int* actions, char* obs, int* rewards){
   // 7)
   spawn_apples(env.world_map, env.apple_map);
 
-  /*
   // 8)
+  int* h_id = env.apple_map -> hide;
+  char* dead = env.dead_agents;
+  for(int i=0; i < env.num_of_agents; i++){
+    if (actions[i] != 7)
+      continue;
+
+    if (env.agents[i].orientation & 1)
+      fire_horizontal(env.world_map, MAP_ROW_LENGTH,
+                      env.agents[i], env.apple_map->id, 
+                      &dead, &h_id);
+    else
+      fire_vertical(env.world_map, NUM_OF_ROWS,
+                    env.agents[i], env.apple_map->id, 
+                    &dead, &h_id);
+  }
+
+  // 11)
   for(int i=0; i < env.num_of_agents; i++){
     if (actions[i] != 7)
       continue;
     
     if (env.agents[i].orientation & 1)
-      fire_horizontal(...);
+      clean_horizontal(env.world_map, MAP_ROW_LENGTH, env.agents[i]);
     else
-      fire_vertical(...);
+      clean_vertical(env.world_map, NUM_OF_ROWS, env.agents[i]);
   }
-  */
+
+  while (h_id != env.apple_map -> hide){
+    h_id--;
+    Pair p = (env.apple_map -> pos)[*h_id];
+    env.world_map[p.y][p.x] = 'A';
+  }
+
+  // 12)
+  while (dead != env.dead_agents){
+    dead--;
+    spawn_agent(env, &env.agents[*dead]);
+  }
 }
