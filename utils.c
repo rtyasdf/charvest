@@ -4,11 +4,11 @@
 
 int count_pos(char* map[], const int num_of_rows, const int length, char c){
   int counter = 0;
-  for(int i=0; i<num_of_rows; i++){
-    for(int j=0; j<length; j++)
+  for(int i=0; i < num_of_rows; i++)
+    for(int j=0; j < length; j++)
       if (map[i][j] == c)
         counter++;
-  }
+
   return counter;
 }
 
@@ -16,12 +16,13 @@ int count_pos(char* map[], const int num_of_rows, const int length, char c){
 Pair* create_pos_array(char* map[], const int num_of_rows, const int length, char c, int num_of_pos){
   Pair* positions = (Pair* ) malloc(sizeof(Pair) * num_of_pos);
   
-  for(int i=0; i<num_of_rows; i++){
-    for(int j=0; j<length; j++)
+  int idx = 0;
+  for(int i=0; i < num_of_rows; i++){
+    for(int j=0; j < length; j++)
       if (map[i][j] == c){
-        num_of_pos--;
-        positions[num_of_pos].y = i;
-        positions[num_of_pos].x = j;
+        positions[idx].y = i;
+        positions[idx].x = j;
+        idx++;
       }
   }
   return positions;
@@ -72,11 +73,9 @@ void get_agent_observation(HarvestAgent agent, char** map,
   int global_right = MIN(right, length - 1);
 
   for(;global_top <= global_bottom; global_top++){
-    int j = local_left;
-    for(int i=global_left; i <= global_right; i++){
-      obs[local_top * 7 + j] = map[global_top][i];
-      j++;
-    }
+    char* ptr = (char* )(obs + 7 * local_top + local_left);
+    for(int i=global_left; i <= global_right; i++)
+      *(ptr++) = map[global_top][i];
     local_top++;
   }
 }

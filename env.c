@@ -2,6 +2,7 @@
 #include<stdio.h>
 #include"player.c"
 #include"utils.c"
+#include"apple_map.c"
 #include"resolution.c"
 
 typedef struct {
@@ -9,12 +10,12 @@ typedef struct {
 
   char** world_map;
 
-  Pair* apple_pos;
+  AppleMap* apple_map;
+
   Pair* spawn_pos;
   Pair* beam_pos;
   Pair* wall_pos;
 
-  int apple_pos_size;
   int spawn_pos_size;
   int beam_pos_size;
   int wall_pos_size;
@@ -42,6 +43,21 @@ char* HARVEST_MAP[16] = {"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
                          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"};
 
 
+void spawn_agent(HarvestEnv env, HarvestAgent* agent){
+  int index = random() % env.spawn_pos_size;
+  Pair p = env.spawn_pos[index];
+
+  while (env.world_map[p.y][p.x] != ' '){
+    index = random() % env.spawn_pos_size;
+    p = env.spawn_pos[index];
+  }
+
+  agent -> pos = p;
+  agent -> orientation = random() & 3;
+  env.world_map[p.y][p.x] = agent -> id + 97;
+}
+
+
 HarvestEnv create_env(int num_of_agents){
   HarvestEnv env;
   env.num_of_agents = num_of_agents;
@@ -49,9 +65,8 @@ HarvestEnv create_env(int num_of_agents){
   env.spawn_pos_size = count_pos(HARVEST_MAP, NUM_OF_ROWS, MAP_ROW_LENGTH, 'P');
   env.spawn_pos = create_pos_array(HARVEST_MAP, NUM_OF_ROWS, MAP_ROW_LENGTH, 'P', env.spawn_pos_size);
   
-  env.apple_pos_size = count_pos(HARVEST_MAP, NUM_OF_ROWS, MAP_ROW_LENGTH, 'A');
-  env.apple_pos = create_pos_array(HARVEST_MAP, NUM_OF_ROWS, MAP_ROW_LENGTH, 'A', env.apple_pos_size);
-  
+  env.apple_map = create_apple_map(HARVEST_MAP, NUM_OF_ROWS, MAP_ROW_LENGTH, 'A');
+
   env.wall_pos_size = count_pos(HARVEST_MAP, NUM_OF_ROWS, MAP_ROW_LENGTH, '@');
   env.wall_pos = create_pos_array(HARVEST_MAP, NUM_OF_ROWS, MAP_ROW_LENGTH, '@', env.wall_pos_size);
   
@@ -59,7 +74,7 @@ HarvestEnv create_env(int num_of_agents){
   fill_map(env.world_map, env.wall_pos, env.wall_pos_size, '@');
 
   env.agents = (HarvestAgent* ) malloc(sizeof(HarvestAgent) * num_of_agents);
-  for(int i=0; i<num_of_agents; i++)
+  for(char i=0; i < num_of_agents; i++)
     env.agents[i] = create_agent(i, 0, 0, 0);
 
   return env;
@@ -89,23 +104,12 @@ void reset(HarvestEnv env, char* obs){
   fill_map(env.world_map, env.wall_pos, env.wall_pos_size, '@');
 
   // * поставить яблоки
-  fill_map(env.world_map, env.apple_pos, env.apple_pos_size, 'A');
+  fill_map(env.world_map, env.apple_map -> pos, env.apple_map -> size, 'A');
   
   // * назначить агентам позиции
   //    (и отрисовать их на world_map)
-  int index = random() % env.spawn_pos_size;
-  Pair p = env.spawn_pos[index];
-
-  for(int i=0; i < env.num_of_agents; i++){
-    while (env.world_map[p.y][p.x] != ' '){
-      index = random() % env.spawn_pos_size;
-      p = env.spawn_pos[index];
-    }
-    
-    env.agents[i].pos = p;
-    env.agents[i].orientation = random() & 3;
-    env.world_map[p.y][p.x] = env.agents[i].id + 97;
-  }
+  for(int i=0; i < env.num_of_agents; i++)
+    spawn_agent(env, &env.agents[i]);
 
   // * записать наблюдения для каждого агента
   for(int i=0; i < env.num_of_agents; i++)
@@ -124,8 +128,8 @@ void reset(HarvestEnv env, char* obs){
 //  4) смена позиций агентов
 //  5) поедание яблок
 //  6) поворот агентов которые выбрали TURN
-//  8) выращиваем новые яблоки
-//  7) "рендер" выстрелов
+//  7) выращиваем новые яблоки
+//  8) "рендер" выстрелов
 //  9) получаем снимки
 // 10) собираем награды
 // 11) убираем выстрелы, возвращаем яблоки под ними
@@ -152,7 +156,7 @@ void step(HarvestEnv env, int* actions, char* obs, int* rewards){
   update_moves(env.world_map, env.num_of_agents, (Pair* )next_pos, (int* )change); 
 
 
-  // 4) and 5)
+  // 4), 5) and 6)
   for(char i=0; i < env.num_of_agents; i++){
     //   если change == 1:  // по построению это автоматически означает, что агент собирался двигаться И будет двигаться
     //     если на нынешней позиции стоит буква агента
@@ -171,9 +175,37 @@ void step(HarvestEnv env, int* actions, char* obs, int* rewards){
       env.agents[i].pos = np;
 
       // съесть яблоко в новой локации
-      consume(&env.agents[i], env.world_map[np.y][np.x]);
+      //consume(&env.agents[i], env.world_map[np.y][np.x]);
+      if (env.world_map[np.y][np.x] == env.apple_map -> apple_symbol){
+        env.agents[i].reward++;
+        kill_apple(env.apple_map, np.y, np.x); 
+      }
 
       env.world_map[np.y][np.x] = 97 + i;
     }
+    else if (actions[i] == 5){
+      env.agents[i].orientation++;
+      env.agents[i].orientation &= 3;
+    }
+    else if (actions[i] == 6){
+      env.agents[i].orientation += 3;
+      env.agents[i].orientation &= 3;
+    }
   }
+
+  // 7)
+  spawn_apples(env.world_map, env.apple_map);
+
+  /*
+  // 8)
+  for(int i=0; i < env.num_of_agents; i++){
+    if (actions[i] != 7)
+      continue;
+    
+    if (env.agents[i].orientation & 1)
+      fire_horizontal(...);
+    else
+      fire_vertical(...);
+  }
+  */
 }
