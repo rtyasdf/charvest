@@ -160,6 +160,15 @@ void spawn_apples(char** map, AppleMap* a_map){
 }
 
 
+void reset_apple_map(AppleMap* map){
+  for(int i=0; i < map -> size; i++)
+    map -> alive[i] = map -> neighbors[i][0];
+
+  map -> old_head = map -> dead;
+  map -> new_head = map -> dead;
+}
+
+
 AppleMap* create_apple_map(char* build_map[], const int num_of_rows, const int length, char c){
   int dummy;
   AppleMap* map = (AppleMap* ) malloc(sizeof(AppleMap));
@@ -175,7 +184,7 @@ AppleMap* create_apple_map(char* build_map[], const int num_of_rows, const int l
   fill_neighbors(build_map, map -> neighbors, map -> id, num_of_rows, length, R, c);
 
   map -> alive = (int* ) malloc(sizeof(int) * map -> size);
-  for(int i=0; i < map->size; i++)
+  for(int i=0; i < map -> size; i++)
     map -> alive[i] = map -> neighbors[i][0];
   
   map -> dead = (int* ) malloc(sizeof(int) * (map -> size + 1));

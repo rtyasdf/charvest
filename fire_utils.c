@@ -46,8 +46,10 @@ void fire_vertical(char** map, const int num_of_rows,
       }
 
       char s = map[y][x];
-      if (s == '@')
-        break;
+      if (s == '@'){
+        x++;
+        continue;
+      }
       else if (s == 'A'){
         **apples = apple_id[y][x];
         (*apples)++;
@@ -104,8 +106,10 @@ void clean_vertical(char** map, const int num_of_rows, HarvestAgent agent){
       }
 
       char s = map[y][x];
-      if (s == '@')
-        break;
+      if (s == '@'){
+        x++;
+        continue;
+      }
       
       map[y][x] = ' ';
       x++;

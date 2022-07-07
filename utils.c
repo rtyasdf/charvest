@@ -52,32 +52,128 @@ void fill_map(char** map, Pair* positions, int size, char symbol){
   }
 }
 
+void get_obs_up(int global_top, int global_bottom,
+                int global_left, int global_right,
+                int local_top, int local_left, const int view_size,
+                char** map, char* obs){
+
+  obs += local_left;
+
+  for(;global_top <= global_bottom; global_top++){
+    char* ptr = (char* )(obs + view_size * local_top);
+    for(int i=global_left; i <= global_right; i++)
+      *(ptr++) = map[global_top][i];
+    local_top++;
+  }
+}
+
+
+void get_obs_right(int global_top, int global_bottom, 
+                   int global_left, int global_right,
+                   int local_top, int local_left, const int view_size,
+                   char** map, char* obs){
+
+  obs += view_size * (view_size - local_left - 1);
+
+  for(;global_top <= global_bottom; global_top++){
+    char* ptr = (char* )(obs  + local_top);
+    for(int i=global_left; i <= global_right; i++){
+      *ptr = map[global_top][i];
+      ptr -= view_size;
+    }
+    local_top++;
+  }
+}
+
+
+void get_obs_down(int global_top, int global_bottom,
+                  int global_left, int global_right,
+                  int local_top, int local_left, const int view_size,
+                  char** map, char* obs){
+
+  obs += view_size * view_size - local_left - 1;
+
+  for(;global_top <= global_bottom; global_top++){
+    char* ptr = (char* )(obs - view_size * local_top);
+    for(int i=global_left; i <= global_right; i++)
+      *(ptr--) = map[global_top][i];
+    local_top++;
+  }
+}
+
+
+void get_obs_left(int global_top, int global_bottom,
+                  int global_left, int global_right,
+                  int local_top, int local_left, const int view_size,
+                  char** map, char* obs){
+
+  obs += view_size * (local_left + 1) - 1;
+
+  for(;global_top <= global_bottom; global_top++){
+    char* ptr = (char* )(obs - local_top);
+    for(int i=global_left; i <= global_right; i++){
+      *ptr = map[global_top][i];
+      ptr += view_size;
+    }
+    local_top++;
+  }
+}
+
 
 void get_agent_observation(HarvestAgent agent, char** map, 
-                           const int num_of_rows, const int length, 
+                           const int num_of_rows, const int length, const int view_size, 
                            char* obs){
-  int top = agent.pos.y - 3;
-  int bottom = agent.pos.y + 3;
+  int top = agent.pos.y - view_size;
+  int bottom = agent.pos.y + view_size;
 
   int local_top = MAX(-top, 0);
 
   int global_top = MAX(top, 0);
   int global_bottom = MIN(bottom, num_of_rows - 1);
 
-  int left = agent.pos.x - 3;
-  int right = agent.pos.x + 3;
+  int left = agent.pos.x - view_size;
+  int right = agent.pos.x + view_size;
 
   int local_left = MAX(-left, 0);
 
   int global_left = MAX(left, 0);
   int global_right = MIN(right, length - 1);
 
+  switch (agent.orientation){
+    case 0:
+      get_obs_up(global_top, global_bottom, 
+                 global_left, global_right, 
+                 local_top, local_left, (view_size << 1) | 1, 
+                 map, obs);
+      break;
+    case 1:
+      get_obs_right(global_top, global_bottom, 
+                    global_left, global_right, 
+                    local_top, local_left, (view_size << 1) | 1, 
+                    map, obs);
+      break;
+    case 2:
+      get_obs_down(global_top, global_bottom, 
+                   global_left, global_right, 
+                   local_top, local_left, (view_size << 1) | 1, 
+                   map, obs);
+      break;
+    case 3:
+      get_obs_left(global_top, global_bottom, 
+                   global_left, global_right, 
+                   local_top, local_left, (view_size << 1) | 1, 
+                   map, obs);
+      break;
+  }
+  /*
   for(;global_top <= global_bottom; global_top++){
     char* ptr = (char* )(obs + 7 * local_top + local_left);
-    for(int i=global_left; i <= global_right; i++)
+    for(int i=global_left; i <= global_right; i++){
       *(ptr++) = map[global_top][i];
+    }
     local_top++;
   }
+  */
 }
 
 /*

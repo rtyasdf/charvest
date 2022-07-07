@@ -14,11 +14,9 @@ typedef struct {
   AppleMap* apple_map;
 
   Pair* spawn_pos;
-  Pair* beam_pos;
   Pair* wall_pos;
 
   int spawn_pos_size;
-  int beam_pos_size;
   int wall_pos_size;
 
   HarvestAgent* agents;
@@ -27,6 +25,8 @@ typedef struct {
 
 const int NUM_OF_ROWS = 16;
 const int MAP_ROW_LENGTH = 38;
+const int VIEW_SIZE = 7;
+const int DIAMETER = (VIEW_SIZE << 1) | 1;
 char* HARVEST_MAP[16] = {"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
                          "@ P   P      A    P AAAAA    P  A P  @",
                          "@  P     A P AA    P    AAA    A  A  @",
@@ -117,8 +117,10 @@ void reset(HarvestEnv env, char* obs){
   // * записать наблюдения для каждого агента
   for(int i=0; i < env.num_of_agents; i++)
     get_agent_observation(env.agents[i], env.world_map, 
-                          NUM_OF_ROWS, MAP_ROW_LENGTH, 
-                          (char* )(obs + 7 * 7 * i));
+                          NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
+                          (char* )(obs + DIAMETER * DIAMETER * i));
+
+  reset_apple_map(env.apple_map);
 }
 
 
@@ -215,8 +217,14 @@ void step(HarvestEnv env, int* actions, char* obs, int* rewards){
                     &dead, &h_id);
   }
 
+  // 9)
+  for(int i=0; i < env.num_of_agents; i++)
+    get_agent_observation(env.agents[i], env.world_map, 
+                          NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
+                          (char* )(obs + DIAMETER * DIAMETER * i));
+
   // 11)
-  for(int i=0; i < env.num_of_agents; i++){
+  for(char i=0; i < env.num_of_agents; i++){
     if (actions[i] != 7)
       continue;
     
@@ -238,3 +246,4 @@ void step(HarvestEnv env, int* actions, char* obs, int* rewards){
     spawn_agent(env, &env.agents[*dead]);
   }
 }
+
