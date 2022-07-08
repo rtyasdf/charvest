@@ -45,6 +45,7 @@ char* HARVEST_MAP[16] = {"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
                          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"};
 
 
+
 void spawn_agent(HarvestEnv env, HarvestAgent* agent){
   int index = random() % env.spawn_pos_size;
   Pair p = env.spawn_pos[index];
@@ -84,7 +85,7 @@ HarvestEnv create_env(int num_of_agents){
 }
 
 
-void reset(HarvestEnv env, char* obs){
+void reset(HarvestEnv env, float* obs){
   /*
   1. Несмотря на то, что python'овский float на деле есть double,
        pytorch ожидает настоящий C-шный float, 
@@ -113,12 +114,12 @@ void reset(HarvestEnv env, char* obs){
   //    (и отрисовать их на world_map)
   for(int i=0; i < env.num_of_agents; i++)
     spawn_agent(env, &env.agents[i]);
-
+  
   // * записать наблюдения для каждого агента
   for(int i=0; i < env.num_of_agents; i++)
     get_agent_observation(env.agents[i], env.world_map, 
                           NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
-                          (char* )(obs + DIAMETER * DIAMETER * i));
+                          (float* )(obs + DIAMETER * DIAMETER * i));
 
   reset_apple_map(env.apple_map);
 }
@@ -140,7 +141,7 @@ void reset(HarvestEnv env, char* obs){
 // 11) убираем выстрелы, возвращаем яблоки под ними
 // 12) возрождаем пораженных агентов
 
-void step(HarvestEnv env, int* actions, char* obs, int* rewards){
+void step(HarvestEnv env, int* actions, float* obs, float* rewards){
 
   // 1) and 2) 
   Pair next_pos[env.num_of_agents];
@@ -221,7 +222,7 @@ void step(HarvestEnv env, int* actions, char* obs, int* rewards){
   for(int i=0; i < env.num_of_agents; i++)
     get_agent_observation(env.agents[i], env.world_map, 
                           NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
-                          (char* )(obs + DIAMETER * DIAMETER * i));
+                          (float* )(obs + DIAMETER * DIAMETER * i));
 
   // 11)
   for(char i=0; i < env.num_of_agents; i++){

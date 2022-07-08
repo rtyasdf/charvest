@@ -52,10 +52,10 @@ void fill_map(char** map, Pair* positions, int size, char symbol){
   }
 }
 
-void get_obs_up(int global_top, int global_bottom,
-                int global_left, int global_right,
-                int local_top, int local_left, const int view_size,
-                char** map, char* obs){
+void get_char_obs_up(int global_top, int global_bottom,
+                     int global_left, int global_right,
+                     int local_top, int local_left, const int view_size,
+                     char** map, char* obs){
 
   obs += local_left;
 
@@ -68,10 +68,10 @@ void get_obs_up(int global_top, int global_bottom,
 }
 
 
-void get_obs_right(int global_top, int global_bottom, 
-                   int global_left, int global_right,
-                   int local_top, int local_left, const int view_size,
-                   char** map, char* obs){
+void get_char_obs_right(int global_top, int global_bottom, 
+                        int global_left, int global_right,
+                        int local_top, int local_left, const int view_size,
+                        char** map, char* obs){
 
   obs += view_size * (view_size - local_left - 1);
 
@@ -86,10 +86,10 @@ void get_obs_right(int global_top, int global_bottom,
 }
 
 
-void get_obs_down(int global_top, int global_bottom,
-                  int global_left, int global_right,
-                  int local_top, int local_left, const int view_size,
-                  char** map, char* obs){
+void get_char_obs_down(int global_top, int global_bottom,
+                       int global_left, int global_right,
+                       int local_top, int local_left, const int view_size,
+                       char** map, char* obs){
 
   obs += view_size * view_size - local_left - 1;
 
@@ -102,10 +102,10 @@ void get_obs_down(int global_top, int global_bottom,
 }
 
 
-void get_obs_left(int global_top, int global_bottom,
-                  int global_left, int global_right,
-                  int local_top, int local_left, const int view_size,
-                  char** map, char* obs){
+void get_char_obs_left(int global_top, int global_bottom,
+                       int global_left, int global_right,
+                       int local_top, int local_left, const int view_size,
+                       char** map, char* obs){
 
   obs += view_size * (local_left + 1) - 1;
 
@@ -120,9 +120,93 @@ void get_obs_left(int global_top, int global_bottom,
 }
 
 
+float char2float(char c){
+  switch (c){
+    case ' ':
+      return 1.f;
+    case '@':
+      return 2.f;
+    case 'F':
+      return 3.f;
+    case 'A':
+      return 4.f;
+    default:
+      return (c - 97) + 5.f;
+  }
+}
+
+
+void get_obs_up(int global_top, int global_bottom,
+                int global_left, int global_right,
+                int local_top, int local_left, const int view_size,
+                char** map, float* obs){
+
+  obs += local_left;
+
+  for(;global_top <= global_bottom; global_top++){
+    float* ptr = (float* )(obs + view_size * local_top);
+    for(int i=global_left; i <= global_right; i++)
+      *(ptr++) = char2float(map[global_top][i]);
+    local_top++;
+  }
+}
+
+
+void get_obs_right(int global_top, int global_bottom, 
+                   int global_left, int global_right,
+                   int local_top, int local_left, const int view_size,
+                   char** map, float* obs){
+
+  obs += view_size * (view_size - local_left - 1);
+
+  for(;global_top <= global_bottom; global_top++){
+    float* ptr = (float* )(obs  + local_top);
+    for(int i=global_left; i <= global_right; i++){
+      *ptr = char2float(map[global_top][i]);
+      ptr -= view_size;
+    }
+    local_top++;
+  }
+}
+
+
+void get_obs_down(int global_top, int global_bottom,
+                  int global_left, int global_right,
+                  int local_top, int local_left, const int view_size,
+                  char** map, float* obs){
+
+  obs += view_size * view_size - local_left - 1;
+
+  for(;global_top <= global_bottom; global_top++){
+    float* ptr = (float* )(obs - view_size * local_top);
+    for(int i=global_left; i <= global_right; i++)
+      *(ptr--) = char2float(map[global_top][i]);
+    local_top++;
+  }
+}
+
+
+void get_obs_left(int global_top, int global_bottom,
+                  int global_left, int global_right,
+                  int local_top, int local_left, const int view_size,
+                  char** map, float* obs){
+
+  obs += view_size * (local_left + 1) - 1;
+
+  for(;global_top <= global_bottom; global_top++){
+    float* ptr = (float* )(obs - local_top);
+    for(int i=global_left; i <= global_right; i++){
+      *ptr = char2float(map[global_top][i]);
+      ptr += view_size;
+    }
+    local_top++;
+  }
+}
+
+
 void get_agent_observation(HarvestAgent agent, char** map, 
                            const int num_of_rows, const int length, const int view_size, 
-                           char* obs){
+                           float* obs){
   int top = agent.pos.y - view_size;
   int bottom = agent.pos.y + view_size;
 
