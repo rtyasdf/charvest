@@ -95,6 +95,7 @@ if __name__ == "__main__":
       e.step(actions, observation, fake_rewards)
       y = observation.reshape((n_agents, 15, 15))  # NO COPY
 
+  # arrays filled with garbage, don't take it seriously
   for n in range(n_agents):
     print(f"\tAgent {n}:")
     print(y[n])
