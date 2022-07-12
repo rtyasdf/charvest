@@ -68,37 +68,61 @@ Step.argtypes = [HarvestEnv, int_p, float_p, float_p]
 
 
 class Env:
-  def __init__(self, n_agents: int):
+  def __init__(self, n_agents: int, n_steps: int=1000):
     self.c_env = Create(n_agents)
+    self.n_steps = n_steps
+    self.obs = np.zeros((n_steps + 1, n_agents, 15, 15), dtype=np.float32)
+    self.full_map = np.zeros((n_steps + 1, 16, 38), dtype=np.float32)
+    self.reward = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
 
-  def reset(self, obs):
-    Reset(self.c_env, obs.ctypes.data_as(float_p))
+  def reset(self):
+    self.t = 0
 
-  def step(self, actions, obs, rewards):
-    Step(self.c_env, actions.ctypes.data_as(int_p), obs.ctypes.data_as(float_p), rewards.ctypes.data_as(float_p))
+    self.obs.fill(0)
+    self.full_map.fill(0)
+    self.reward.fill(0)
+
+    Reset(self.c_env, 
+          self.full_map[self.t].ravel().ctypes.data_as(float_p), 
+          self.obs[self.t].ravel().ctypes.data_as(float_p))
+
+    return self.full_map[self.t], self.obs[self.t]
+
+  def step(self, actions):
+    self.t += 1
+    Step(self.c_env, actions.ctypes.data_as(int_p),
+         self.full_map[self.t].ravel().ctypes.data_as(float_p),
+         self.obs[self.t].ravel().ctypes.data_as(float_p),
+         self.reward[self.t].ctypes.data_as(float_p))
+
+    return self.full_map[self.t], self.obs[self.t], self.reward[self.t], self.t == self.n_steps
 
 
 
 if __name__ == "__main__":
   n_agents = 5
+  n_episodes = 1000
 
   e = Env(n_agents)
 
-  observation = np.zeros((n_agents * 15 * 15, ), dtype=np.float32)
-  fake_rewards = np.zeros((n_agents, ), dtype=np.float32)
   actions = np.zeros((n_agents, ), dtype=np.int32)
 
   T = pc()
-  for i in range(1000):
-    e.reset(observation)    
-    for _ in range(1000):
-      e.step(actions, observation, fake_rewards)
-      y = observation.reshape((n_agents, 15, 15))  # NO COPY
+  for i in range(n_episodes):
+    fmap, obs = e.reset()
+    done = False 
+    while not done:
+      fmap, obs, rew, done = e.step(actions)
 
-  # arrays filled with garbage, don't take it seriously
+  T = pc() - T
+
+  print("Full map:")
+  print(fmap)
+
   for n in range(n_agents):
     print(f"\tAgent {n}:")
-    print(y[n])
+    print(obs[n])
     print("\n\n")
 
-  print(f"1000 episodes takes {pc() - T : .2f} seconds")
+  print(f"{n_episodes} episodes takes {T : .2f} seconds")
+

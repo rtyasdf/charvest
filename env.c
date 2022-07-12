@@ -85,7 +85,7 @@ HarvestEnv create_env(int num_of_agents){
 }
 
 
-void reset(HarvestEnv env, float* obs){
+void reset(HarvestEnv env, float* full_map, float* obs){
   /*
   1. Несмотря на то, что python'овский float на деле есть double,
        pytorch ожидает настоящий C-шный float, 
@@ -115,6 +115,9 @@ void reset(HarvestEnv env, float* obs){
   for(int i=0; i < env.num_of_agents; i++)
     spawn_agent(env, &env.agents[i]);
   
+  // * записать всю карту во float'ах
+  get_global_map(env.world_map, full_map, NUM_OF_ROWS, MAP_ROW_LENGTH);
+
   // * записать наблюдения для каждого агента
   for(int i=0; i < env.num_of_agents; i++)
     get_agent_observation(env.agents[i], env.world_map, 
@@ -136,12 +139,12 @@ void reset(HarvestEnv env, float* obs){
 //  6) поворот агентов которые выбрали TURN
 //  7) выращиваем новые яблоки
 //  8) "рендер" выстрелов
-//  9) получаем снимки
+//  9) получаем снимки и всю карту во float'ах
 // 10) собираем награды
 // 11) убираем выстрелы, возвращаем яблоки под ними
 // 12) возрождаем пораженных агентов
 
-void step(HarvestEnv env, int* actions, float* obs, float* rewards){
+void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewards){
 
   // 1) and 2) 
   Pair next_pos[env.num_of_agents];
@@ -219,6 +222,8 @@ void step(HarvestEnv env, int* actions, float* obs, float* rewards){
   }
 
   // 9)
+  get_global_map(env.world_map, full_map, NUM_OF_ROWS, MAP_ROW_LENGTH);
+
   for(int i=0; i < env.num_of_agents; i++)
     get_agent_observation(env.agents[i], env.world_map, 
                           NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,

@@ -260,6 +260,14 @@ void get_agent_observation(HarvestAgent agent, char** map,
   */
 }
 
+
+void get_global_map(char** map, float* full_map,
+                    const int num_of_rows, const int length){
+
+  for(int i=0; i < num_of_rows; i++)
+    for(int j=0; j < length; j++)
+      *(full_map++) = char2float(map[i][j]);
+}
 /*
 
 ACTIONS:
