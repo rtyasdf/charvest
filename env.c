@@ -23,10 +23,11 @@ typedef struct {
   char* dead_agents;
 } HarvestEnv;
 
-const int NUM_OF_ROWS = 16;
-const int MAP_ROW_LENGTH = 38;
 const int VIEW_SIZE = 7;
 const int DIAMETER = (VIEW_SIZE << 1) | 1;
+const int RELOAD_TIME = 10;
+const int NUM_OF_ROWS = 16;
+const int MAP_ROW_LENGTH = 38;
 char* HARVEST_MAP[16] = {"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
                          "@ P   P      A    P AAAAA    P  A P  @",
                          "@  P     A P AA    P    AAA    A  A  @",
@@ -78,7 +79,7 @@ HarvestEnv create_env(int num_of_agents){
 
   env.agents = (HarvestAgent* ) malloc(sizeof(HarvestAgent) * num_of_agents);
   for(char i=0; i < num_of_agents; i++)
-    env.agents[i] = create_agent(i, 0, 0, 0);
+    env.agents[i] = create_agent(i, 0, 0, 0, RELOAD_TIME);
 
   env.dead_agents = (char* ) malloc(sizeof(char) * (num_of_agents + 1));
   return env;
@@ -112,9 +113,12 @@ void reset(HarvestEnv env, float* full_map, float* obs){
   
   // * назначить агентам позиции
   //    (и отрисовать их на world_map)
-  for(int i=0; i < env.num_of_agents; i++)
+  // * каждому агенту обновить cooldown
+  for(int i=0; i < env.num_of_agents; i++){
     spawn_agent(env, &env.agents[i]);
-  
+    env.agents[i].cooldown = RELOAD_TIME;
+  }
+
   // * записать всю карту во float'ах
   get_global_map(env.world_map, full_map, NUM_OF_ROWS, MAP_ROW_LENGTH);
 
@@ -135,12 +139,12 @@ void reset(HarvestEnv env, float* full_map, float* obs){
 //  2) отлов шагов в стену
 //  3) conflict resolution
 //  4) смена позиций агентов
-//  5) поедание яблок
+//  5) поедание яблок и собираем награды
 //  6) поворот агентов которые выбрали TURN
-//  7) выращиваем новые яблоки
-//  8) "рендер" выстрелов
-//  9) получаем снимки и всю карту во float'ах
-// 10) собираем награды
+//  7) обновляем счётчик "шагов подряд без выстрелов" для каждого агента
+//  8) выращиваем новые яблоки
+//  9) "рендер" выстрелов
+// 10) получаем снимки и всю карту во float'ах
 // 11) убираем выстрелы, возвращаем яблоки под ними
 // 12) возрождаем пораженных агентов
 
@@ -164,7 +168,7 @@ void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewa
   
   update_moves(env.world_map, env.num_of_agents, (Pair* )next_pos, (int* )change); 
 
-  // 4), 5) and 6)
+  // 4), 5), 6) and 7)
   for(char i=0; i < env.num_of_agents; i++){
     //   если change == 1:  // по построению это автоматически означает, что агент собирался двигаться И будет двигаться
     //     если на нынешней позиции стоит буква этого агента
@@ -185,7 +189,7 @@ void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewa
       // съесть яблоко в новой локации
       //consume(&env.agents[i], env.world_map[np.y][np.x]);
       if (env.world_map[np.y][np.x] == env.apple_map -> apple_symbol){
-        env.agents[i].reward++;
+        rewards[i] = 1;
         kill_apple(env.apple_map, np.y, np.x); 
       }
 
@@ -199,16 +203,17 @@ void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewa
       env.agents[i].orientation += 3;
       env.agents[i].orientation &= 3;
     }
+    env.agents[i].cooldown++;
   }
 
-  // 7)
+  // 8)
   spawn_apples(env.world_map, env.apple_map);
 
-  // 8)
+  // 9)
   int* h_id = env.apple_map -> hide;
   char* dead = env.dead_agents;
   for(int i=0; i < env.num_of_agents; i++){
-    if (actions[i] != 7)
+    if (actions[i] != 7  ||  env.agents[i].cooldown < RELOAD_TIME)
       continue;
 
     if (env.agents[i].orientation & 1)
@@ -221,19 +226,21 @@ void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewa
                     &dead, &h_id);
   }
 
-  // 9)
+  // 10)
   get_global_map(env.world_map, full_map, NUM_OF_ROWS, MAP_ROW_LENGTH);
 
   for(int i=0; i < env.num_of_agents; i++)
-    get_agent_observation(env.agents[i], env.world_map, 
+    get_agent_observation(env.agents[i], env.world_map,
                           NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
                           (float* )(obs + DIAMETER * DIAMETER * i));
 
   // 11)
   for(char i=0; i < env.num_of_agents; i++){
-    if (actions[i] != 7)
+    if (actions[i] != 7  ||  env.agents[i].cooldown < RELOAD_TIME)
       continue;
-    
+
+    env.agents[i].cooldown = 0;
+
     if (env.agents[i].orientation & 1)
       clean_horizontal(env.world_map, MAP_ROW_LENGTH, env.agents[i]);
     else

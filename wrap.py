@@ -79,7 +79,6 @@ class Env:
     self.t = 0
 
     self.obs.fill(0)
-    self.full_map.fill(0)
     self.reward.fill(0)
 
     Reset(self.c_env, 
