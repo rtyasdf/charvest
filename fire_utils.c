@@ -26,7 +26,7 @@ void fire_horizontal(char** map, const int length,
       x += sign;
     }
     if (x == 0 || x == length)
-        break;
+      continue;
   }
 }
 
@@ -87,7 +87,7 @@ void clean_horizontal(char** map, const int length, HarvestAgent agent){
       x += sign;
     }
     if (x == 0 || x == length)
-      break;
+      continue;
   }
 }
 
