@@ -55,6 +55,10 @@ class HarvestEnv(Structure):
               ("dead_agents", char_p)]
 
 
+Seed = lib.seed
+Seed.argtypes = [c_int]
+
+
 Create = lib.create_env
 Create.restype = HarvestEnv
 Create.argtypes = [c_int]
@@ -72,7 +76,10 @@ Observation = namedtuple('Observation', 'full_map local_obs position orientation
 
 
 class Env:
-  def __init__(self, n_agents: int, n_steps: int=1000):
+  def __init__(self, n_agents: int, n_steps: int=1000, seed: int=0):
+    if seed:
+      Seed(seed)
+
     self.c_env = Create(n_agents)
     self.n_steps = n_steps
 

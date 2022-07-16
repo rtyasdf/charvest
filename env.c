@@ -46,6 +46,10 @@ char* HARVEST_MAP[16] = {"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
                          "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"};
 
 
+void seed(int n){
+  srandom(n);
+}
+
 
 void spawn_agent(HarvestEnv env, HarvestAgent* agent){
   int index = random() % env.spawn_pos_size;
