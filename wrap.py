@@ -2,6 +2,7 @@ from ctypes import *
 import numpy as np
 import os
 from time import perf_counter as pc
+from collections import namedtuple
 
 
 dir_path = os.path.dirname(__file__)
@@ -60,19 +61,28 @@ Create.argtypes = [c_int]
 
 
 Reset = lib.reset
-Reset.argtypes = [HarvestEnv, float_p]
+Reset.argtypes = [HarvestEnv, float_p, float_p, float_p, float_p, float_p]
 
 
 Step = lib.step
-Step.argtypes = [HarvestEnv, int_p, float_p, float_p]
+Step.argtypes = [HarvestEnv, int_p, float_p, float_p, float_p, float_p, float_p, float_p]
+
+
+Observation = namedtuple('Observation', 'full_map local_obs position orientation able_to_shoot')
 
 
 class Env:
   def __init__(self, n_agents: int, n_steps: int=1000):
     self.c_env = Create(n_agents)
     self.n_steps = n_steps
-    self.obs = np.zeros((n_steps + 1, n_agents, 15, 15), dtype=np.float32)
+
     self.full_map = np.zeros((n_steps + 1, 16, 38), dtype=np.float32)
+    self.obs = np.zeros((n_steps + 1, n_agents, 15, 15), dtype=np.float32)
+
+    self.positions = np.zeros((n_steps + 1, 2 * n_agents), dtype=np.float32)
+    self.orientations = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
+    self.able_to_shoot = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
+
     self.reward = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
 
   def reset(self):
@@ -80,21 +90,36 @@ class Env:
 
     self.obs.fill(0)
     self.reward.fill(0)
+    
+    # Unnecessary
+    self.positions.fill(0)
+    self.orientations.fill(0)
+    self.able_to_shoot.fill(0)
 
     Reset(self.c_env, 
           self.full_map[self.t].ravel().ctypes.data_as(float_p), 
-          self.obs[self.t].ravel().ctypes.data_as(float_p))
+          self.obs[self.t].ravel().ctypes.data_as(float_p),
+          self.positions[self.t].ravel().ctypes.data_as(float_p),
+          self.orientations[self.t].ravel().ctypes.data_as(float_p),
+          self.able_to_shoot[self.t].ravel().ctypes.data_as(float_p))
 
-    return self.full_map[self.t], self.obs[self.t]
+    return Observation(self.full_map[self.t], self.obs[self.t], 
+                       self.positions[self.t], self.orientations[self.t], self.able_to_shoot[self.t])
 
   def step(self, actions):
     self.t += 1
     Step(self.c_env, actions.ctypes.data_as(int_p),
          self.full_map[self.t].ravel().ctypes.data_as(float_p),
          self.obs[self.t].ravel().ctypes.data_as(float_p),
+         self.positions[self.t].ravel().ctypes.data_as(float_p),
+         self.orientations[self.t].ravel().ctypes.data_as(float_p),
+         self.able_to_shoot[self.t].ravel().ctypes.data_as(float_p),
          self.reward[self.t].ctypes.data_as(float_p))
 
-    return self.full_map[self.t], self.obs[self.t], self.reward[self.t], self.t == self.n_steps
+    obs = Observation(self.full_map[self.t], self.obs[self.t], 
+                      self.positions[self.t], self.orientations[self.t], self.able_to_shoot[self.t])
+
+    return obs, self.reward[self.t], self.t == self.n_steps
 
 
 
@@ -108,19 +133,19 @@ if __name__ == "__main__":
 
   T = pc()
   for i in range(n_episodes):
-    fmap, obs = e.reset()
+    obs = e.reset()
     done = False 
     while not done:
-      fmap, obs, rew, done = e.step(actions)
+      obs, rew, done = e.step(actions)
 
   T = pc() - T
 
   print("Full map:")
-  print(fmap)
+  print(obs.full_map)
 
   for n in range(n_agents):
     print(f"\tAgent {n}:")
-    print(obs[n])
+    print(obs.local_obs[n])
     print("\n\n")
 
   print(f"{n_episodes} episodes takes {T : .2f} seconds")

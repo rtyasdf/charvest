@@ -86,7 +86,8 @@ HarvestEnv create_env(int num_of_agents){
 }
 
 
-void reset(HarvestEnv env, float* full_map, float* obs){
+void reset(HarvestEnv env, float* full_map, float* obs,
+           float* positions, float* orientations, float* able_to_shoot){
   /*
   1. Несмотря на то, что python'овский float на деле есть double,
        pytorch ожидает настоящий C-шный float, 
@@ -115,8 +116,15 @@ void reset(HarvestEnv env, float* full_map, float* obs){
   //    (и отрисовать их на world_map)
   // * каждому агенту обновить cooldown
   for(int i=0; i < env.num_of_agents; i++){
-    spawn_agent(env, &env.agents[i]);
-    env.agents[i].cooldown = RELOAD_TIME;
+    HarvestAgent* ptr = &env.agents[i];
+
+    spawn_agent(env, ptr);
+    ptr -> cooldown = RELOAD_TIME;
+
+    positions[2 * i] = ptr -> pos.x;
+    positions[2 * i + 1] = ptr -> pos.y;
+    orientations[i] = ptr -> orientation;
+    able_to_shoot[i] = 1;
   }
 
   // * записать всю карту во float'ах
@@ -148,7 +156,8 @@ void reset(HarvestEnv env, float* full_map, float* obs){
 // 11) убираем выстрелы, возвращаем яблоки под ними
 // 12) возрождаем пораженных агентов
 
-void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewards){
+void step(HarvestEnv env, int* actions, float* full_map, float* obs, 
+          float* positions, float* orientations, float* able_to_shoot, float* rewards){
 
   // 1) and 2) 
   Pair next_pos[env.num_of_agents];
@@ -229,10 +238,16 @@ void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewa
   // 10)
   get_global_map(env.world_map, full_map, NUM_OF_ROWS, MAP_ROW_LENGTH);
 
-  for(int i=0; i < env.num_of_agents; i++)
+  for(int i=0; i < env.num_of_agents; i++){
     get_agent_observation(env.agents[i], env.world_map,
                           NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
                           (float* )(obs + DIAMETER * DIAMETER * i));
+   
+    positions[2 * i] = env.agents[i].pos.x;
+    positions[2 * i + 1] = env.agents[i].pos.y;
+    orientations[i] = env.agents[i].orientation;
+    able_to_shoot[i] = env.agents[i].cooldown < RELOAD_TIME ? 0 : 1;
+  }
 
   // 11)
   for(char i=0; i < env.num_of_agents; i++){
@@ -240,6 +255,7 @@ void step(HarvestEnv env, int* actions, float* full_map, float* obs, float* rewa
       continue;
 
     env.agents[i].cooldown = 0;
+    able_to_shoot[i] = 0;
 
     if (env.agents[i].orientation & 1)
       clean_horizontal(env.world_map, MAP_ROW_LENGTH, env.agents[i]);
