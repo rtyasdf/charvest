@@ -86,7 +86,7 @@ class Env:
     self.full_map = np.zeros((n_steps + 1, 16, 38), dtype=np.float32)
     self.obs = np.zeros((n_steps + 1, n_agents, 15, 15), dtype=np.float32)
 
-    self.positions = np.zeros((n_steps + 1, 2 * n_agents), dtype=np.float32)
+    self.positions = np.zeros((n_steps + 1, n_agents, 2), dtype=np.float32)
     self.orientations = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
     self.able_to_shoot = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
 
@@ -99,16 +99,17 @@ class Env:
     self.reward.fill(0)
     
     # Unnecessary
-    self.positions.fill(0)
-    self.orientations.fill(0)
-    self.able_to_shoot.fill(0)
+    #self.full_map.fill(0)
+    #self.positions.fill(0)
+    #self.orientations.fill(0)
+    #self.able_to_shoot.fill(0)
 
     Reset(self.c_env, 
           self.full_map[self.t].ravel().ctypes.data_as(float_p), 
           self.obs[self.t].ravel().ctypes.data_as(float_p),
           self.positions[self.t].ravel().ctypes.data_as(float_p),
-          self.orientations[self.t].ravel().ctypes.data_as(float_p),
-          self.able_to_shoot[self.t].ravel().ctypes.data_as(float_p))
+          self.orientations[self.t].ctypes.data_as(float_p),
+          self.able_to_shoot[self.t].ctypes.data_as(float_p))
 
     return Observation(self.full_map[self.t], self.obs[self.t], 
                        self.positions[self.t], self.orientations[self.t], self.able_to_shoot[self.t])
@@ -119,8 +120,8 @@ class Env:
          self.full_map[self.t].ravel().ctypes.data_as(float_p),
          self.obs[self.t].ravel().ctypes.data_as(float_p),
          self.positions[self.t].ravel().ctypes.data_as(float_p),
-         self.orientations[self.t].ravel().ctypes.data_as(float_p),
-         self.able_to_shoot[self.t].ravel().ctypes.data_as(float_p),
+         self.orientations[self.t].ctypes.data_as(float_p),
+         self.able_to_shoot[self.t].ctypes.data_as(float_p),
          self.reward[self.t].ctypes.data_as(float_p))
 
     obs = Observation(self.full_map[self.t], self.obs[self.t], 
@@ -156,4 +157,3 @@ if __name__ == "__main__":
     print("\n\n")
 
   print(f"{n_episodes} episodes takes {T : .2f} seconds")
-
