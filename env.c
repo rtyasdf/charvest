@@ -136,7 +136,7 @@ void reset(HarvestEnv env, float* full_map, float* obs,
 
   // * записать наблюдения для каждого агента
   for(int i=0; i < env.num_of_agents; i++)
-    get_agent_observation(env.agents[i], env.world_map, 
+    get_agent_observation(env.agents[i], full_map, 
                           NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
                           (float* )(obs + DIAMETER * DIAMETER * i));
 
@@ -243,7 +243,7 @@ void step(HarvestEnv env, int* actions, float* full_map, float* obs,
   get_global_map(env.world_map, full_map, NUM_OF_ROWS, MAP_ROW_LENGTH);
 
   for(int i=0; i < env.num_of_agents; i++){
-    get_agent_observation(env.agents[i], env.world_map,
+    get_agent_observation(env.agents[i], full_map,
                           NUM_OF_ROWS, MAP_ROW_LENGTH, VIEW_SIZE,
                           (float* )(obs + DIAMETER * DIAMETER * i));
    

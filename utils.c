@@ -138,73 +138,89 @@ float char2float(char c){
 
 void get_obs_up(int global_top, int global_bottom,
                 int global_left, int global_right,
-                int local_top, int local_left, const int view_size,
-                char** map, float* obs){
+                int local_top, int local_left,
+                const int view_size, const int length,
+                float* map, float* obs){
 
+  float* start = map + global_top * length + global_left;
   obs += local_left;
 
   for(;global_top <= global_bottom; global_top++){
+    map = start;
     float* ptr = (float* )(obs + view_size * local_top);
     for(int i=global_left; i <= global_right; i++)
-      *(ptr++) = char2float(map[global_top][i]);
+      *(ptr++) = *(map++);
     local_top++;
+    start += length;
   }
 }
 
 
 void get_obs_right(int global_top, int global_bottom, 
                    int global_left, int global_right,
-                   int local_top, int local_left, const int view_size,
-                   char** map, float* obs){
+                   int local_top, int local_left,
+                   const int view_size, const int length,
+                   float* map, float* obs){
 
+  float* start = map + global_top * length + global_left;
   obs += view_size * (view_size - local_left - 1);
 
   for(;global_top <= global_bottom; global_top++){
+    map = start;
     float* ptr = (float* )(obs  + local_top);
     for(int i=global_left; i <= global_right; i++){
-      *ptr = char2float(map[global_top][i]);
+      *ptr = *(map++);
       ptr -= view_size;
     }
     local_top++;
+    start += length;
   }
 }
 
 
 void get_obs_down(int global_top, int global_bottom,
                   int global_left, int global_right,
-                  int local_top, int local_left, const int view_size,
-                  char** map, float* obs){
+                  int local_top, int local_left, 
+                  const int view_size, const int length,
+                  float* map, float* obs){
 
+  float* start = map + global_top * length + global_left;
   obs += view_size * view_size - local_left - 1;
 
   for(;global_top <= global_bottom; global_top++){
+    map = start;
     float* ptr = (float* )(obs - view_size * local_top);
     for(int i=global_left; i <= global_right; i++)
-      *(ptr--) = char2float(map[global_top][i]);
+      *(ptr--) = *(map++);
     local_top++;
+    start += length;
   }
 }
 
 
 void get_obs_left(int global_top, int global_bottom,
                   int global_left, int global_right,
-                  int local_top, int local_left, const int view_size,
-                  char** map, float* obs){
+                  int local_top, int local_left, 
+                  const int view_size, const int length,
+                  float* map, float* obs){
 
+  float* start = map + global_top * length + global_left;
   obs += view_size * (local_left + 1) - 1;
 
   for(;global_top <= global_bottom; global_top++){
+    map = start;
     float* ptr = (float* )(obs - local_top);
     for(int i=global_left; i <= global_right; i++){
-      *ptr = char2float(map[global_top][i]);
+      *ptr = *(map++);
       ptr += view_size;
     }
     local_top++;
+    start += length;
   }
 }
 
 
-void get_agent_observation(HarvestAgent agent, char** map, 
+void get_agent_observation(HarvestAgent agent, float* map, 
                            const int num_of_rows, const int length, const int view_size, 
                            float* obs){
   int top = agent.pos.y - view_size;
@@ -227,25 +243,25 @@ void get_agent_observation(HarvestAgent agent, char** map,
     case 0:
       get_obs_up(global_top, global_bottom, 
                  global_left, global_right, 
-                 local_top, local_left, (view_size << 1) | 1, 
+                 local_top, local_left, (view_size << 1) | 1, length,
                  map, obs);
       break;
     case 1:
       get_obs_right(global_top, global_bottom, 
                     global_left, global_right, 
-                    local_top, local_left, (view_size << 1) | 1, 
+                    local_top, local_left, (view_size << 1) | 1, length,
                     map, obs);
       break;
     case 2:
       get_obs_down(global_top, global_bottom, 
                    global_left, global_right, 
-                   local_top, local_left, (view_size << 1) | 1, 
+                   local_top, local_left, (view_size << 1) | 1, length,
                    map, obs);
       break;
     case 3:
       get_obs_left(global_top, global_bottom, 
                    global_left, global_right, 
-                   local_top, local_left, (view_size << 1) | 1, 
+                   local_top, local_left, (view_size << 1) | 1, length,
                    map, obs);
       break;
   }
