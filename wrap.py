@@ -27,8 +27,6 @@ class HarvestAgent(Structure):
               ("orientation", c_char),
               ("reward", c_int)]
 
-agent_p = POINTER(HarvestAgent)
-
 
 class AppleMap(Structure):
   _fields_ = [("pos", pair_p),
@@ -51,7 +49,7 @@ class HarvestEnv(Structure):
               ("wall_pos", pair_p),
               ("spawn_pos_size", c_int),
               ("wall_pos_size", c_int),
-              ("agents", agent_p),
+              ("agents", POINTER(HarvestAgent)),
               ("dead_agents", char_p)]
 
 
