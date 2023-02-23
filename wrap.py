@@ -69,6 +69,9 @@ Reset.argtypes = [HarvestEnv, float_p, float_p, float_p, float_p, float_p]
 Step = lib.step
 Step.argtypes = [HarvestEnv, int_p, float_p, float_p, float_p, float_p, float_p, float_p]
 
+DIAMETER = c_int.in_dll(lib, 'DIAMETER').value
+NUM_OF_ROWS = c_int.in_dll(lib, 'NUM_OF_ROWS').value
+MAP_ROW_LENGTH = c_int.in_dll(lib, 'MAP_ROW_LENGTH').value
 
 Observation = namedtuple('Observation', 'full_map local_obs position orientation able_to_shoot')
 
@@ -85,8 +88,8 @@ class Env:
 
 
   def create_new_arrays(self):
-    self.full_map = np.zeros((self.n_steps + 1, 16, 38), dtype=np.float32)
-    self.obs = np.zeros((self.n_steps + 1, self.n_agents, 15, 15), dtype=np.float32)
+    self.full_map = np.zeros((self.n_steps + 1, NUM_OF_ROWS, MAP_ROW_LENGTH), dtype=np.float32)
+    self.obs = np.zeros((self.n_steps + 1, self.n_agents, DIAMETER, DIAMETER), dtype=np.float32)
 
     self.positions = np.zeros((self.n_steps + 1, self.n_agents, 2), dtype=np.float32)
     self.orientations = np.zeros((self.n_steps + 1, self.n_agents), dtype=np.float32)
@@ -129,7 +132,7 @@ class Env:
 
 if __name__ == "__main__":
   n_agents = 5
-  n_episodes = 1000
+  n_episodes = 100
 
   e = Env(n_agents)
 
