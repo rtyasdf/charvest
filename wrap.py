@@ -80,27 +80,24 @@ class Env:
 
     self.c_env = Create(n_agents)
     self.n_steps = n_steps
+    self.n_agents = n_agents
+    self.create_new_arrays()
 
-    self.full_map = np.zeros((n_steps + 1, 16, 38), dtype=np.float32)
-    self.obs = np.zeros((n_steps + 1, n_agents, 15, 15), dtype=np.float32)
 
-    self.positions = np.zeros((n_steps + 1, n_agents, 2), dtype=np.float32)
-    self.orientations = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
-    self.able_to_shoot = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
+  def create_new_arrays(self):
+    self.full_map = np.zeros((self.n_steps + 1, 16, 38), dtype=np.float32)
+    self.obs = np.zeros((self.n_steps + 1, self.n_agents, 15, 15), dtype=np.float32)
 
-    self.reward = np.zeros((n_steps + 1, n_agents), dtype=np.float32)
+    self.positions = np.zeros((self.n_steps + 1, self.n_agents, 2), dtype=np.float32)
+    self.orientations = np.zeros((self.n_steps + 1, self.n_agents), dtype=np.float32)
+    self.able_to_shoot = np.zeros((self.n_steps + 1, self.n_agents), dtype=np.float32)
+
+    self.reward = np.zeros((self.n_steps + 1, self.n_agents), dtype=np.float32)
+
 
   def reset(self):
     self.t = 0
-
-    self.obs.fill(0)
-    self.reward.fill(0)
-    
-    # Unnecessary
-    #self.full_map.fill(0)
-    #self.positions.fill(0)
-    #self.orientations.fill(0)
-    #self.able_to_shoot.fill(0)
+    self.create_new_arrays()
 
     Reset(self.c_env, 
           self.full_map[self.t].ravel().ctypes.data_as(float_p), 
@@ -109,8 +106,9 @@ class Env:
           self.orientations[self.t].ctypes.data_as(float_p),
           self.able_to_shoot[self.t].ctypes.data_as(float_p))
 
-    return Observation(self.full_map[self.t], self.obs[self.t], 
+    return Observation(self.full_map[self.t], self.obs[self.t],
                        self.positions[self.t], self.orientations[self.t], self.able_to_shoot[self.t])
+
 
   def step(self, actions):
     self.t += 1
