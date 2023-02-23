@@ -24,7 +24,7 @@ typedef struct {
 } HarvestEnv;
 
 const int VIEW_SIZE = 7;
-const int DIAMETER = (VIEW_SIZE << 1) | 1;
+const int DIAMETER = 2 * VIEW_SIZE + 1;
 const int RELOAD_TIME = 10;
 const int NUM_OF_ROWS = 16;
 const int MAP_ROW_LENGTH = 38;
